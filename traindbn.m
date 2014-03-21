@@ -19,22 +19,10 @@ ftimes = get(afs, 'FramePos');
 ftimes = ftimes{1}{1}';
 
 [y, ymin, ymax] = getframelabels('data/delilah.mid', ftimes);
-clear a ftimes;
 
-data = get(afs, 'Data');
-data = data{1}{1}';
-[N, F] = size(data);
-
-% shuffle data, create train/test dataset
-shuffle = randperm(N);
-Ntrain = ceil(train_percent * N);
-Ntest = N - Ntrain;
-Xtrain = data(shuffle(1:Ntrain),:);
-ytrain = y(shuffle(1:Ntrain),:);
-Xtest = data(shuffle(Ntrain+1:end),:);
-ytest = y(shuffle(Ntrain+1:end),:);
-clear data afs y shuffle;
+X = get(afs, 'Data');
+X = X{1}{1}';
 
 % partition dataset into batches
-[Xtrainb, ytrainb, Xtestb, ytestb] = makedatabatches(Xtrain, ytrain, Xtest, ytest);
-clear Xtrain ytrain Xtest ytest;
+[Xtrainb, ytrainb, Xtestb, ytestb] = makedatabatches(X, y, train_percent);
+clear X y a afs ftimes;

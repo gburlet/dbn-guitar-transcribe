@@ -1,8 +1,15 @@
-function [Xtrainb, ytrainb, Xtestb, ytestb] = makedatabatches(Xtrain, ytrain, Xtest, ytest)
-%MAKEDATABATCHES partition the training and testing data into batches for dbn training
+function [Xtrainb, ytrainb, Xtestb, ytestb] = makedatabatches(X, y, train_percent)
+%MAKEDATABATCHES shuffle data, partition the data into training and testing datasets,
+% then partition each set into batches for dbn training
 
-[Ntrain, F] = size(Xtrain);
-[Ntest, ycard] = size(ytest);
+N = size(X,1);
+shuffle = randperm(N);
+Ntrain = ceil(train_percent * N);
+Ntest = N - Ntrain;
+Xtrain = X(shuffle(1:Ntrain),:);
+ytrain = y(shuffle(1:Ntrain),:);
+Xtest = X(shuffle(Ntrain+1:end),:);
+ytest = y(shuffle(Ntrain+1:end),:);
 
 batch_size = 100;
 [train_batch_size, last_train_batch] = deal(floor(Ntrain/batch_size), mod(Ntrain, batch_size));

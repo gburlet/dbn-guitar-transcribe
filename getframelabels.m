@@ -30,4 +30,5 @@ end
 [r,c] = find(y);
 ymin = min(c); y(:,1:ymin-1) = [];
 ymax = max(c); y(:,ymax+1:end) = [];
+
 end
