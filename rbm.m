@@ -12,16 +12,17 @@
 % not been tested to the degree that would be advisable in any important
 % application.  All use of these programs is entirely at the user's own risk.
 
-function [vishid, hidbiases, visbiases] = rbm(batchdata, numhid, maxepoch, restart)
+function [vishid, hidbiases, visbiases, batchposhidprobs] = rbm(batchdata, numhid, maxepoch, restart, verbose)
 % This program trains Restricted Boltzmann Machine in which
 % visible, binary, stochastic pixels are connected to
 % hidden, binary, stochastic feature detectors using symmetrically
 % weighted connections. Learning is done with 1-step Contrastive Divergence.   
-% The program assumes that the following variables are set externally:
+% The program assumes that the following variables are set:
 % maxepoch  -- maximum number of epochs
 % numhid    -- number of hidden units 
 % batchdata -- the data that is divided into batches (numcases numdims numbatches)
 % restart   -- set to 1 if learning starts from beginning 
+% verbose   -- set to 1 if error statements are to be printed
 
 epsilonw      = 0.1;   % Learning rate for weights 
 epsilonvb     = 0.1;   % Learning rate for biases of visible units 
@@ -49,10 +50,10 @@ if restart == 1,
 end
 
 for epoch = epoch:maxepoch,
- fprintf(1,'epoch %d\r',epoch); 
+ %fprintf(1,'epoch %d\r',epoch); 
  errsum=0;
  for batch = 1:numbatches,
- fprintf(1,'epoch %d batch %d\r',epoch,batch); 
+ %fprintf(1,'epoch %d batch %d\r',epoch,batch); 
 
 %%%%%%%%% START POSITIVE PHASE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   data = batchdata{batch};
@@ -96,7 +97,11 @@ for epoch = epoch:maxepoch,
 %%%%%%%%%%%%%%%% END OF UPDATES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 
   end
-  fprintf(1, 'epoch %4i error %6.1f  \n', epoch, errsum); 
+  
+  if verbose
+    fprintf(1, 'epoch %4i error %6.1f  \n', epoch, errsum); 
+  end
+
 end;
 
 end
