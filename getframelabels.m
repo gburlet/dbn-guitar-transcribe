@@ -1,8 +1,10 @@
-function [flabels] = getframelabels(midi_path, ftimes, binaryvec)
+function [y, ymin, ymax] = getframelabels(midi_path, ftimes)
 %GETFRAMELABELS given a midi file (midi_path) and a list of frame start
-% and stop times (ftimes), return a cell array of midi numbers for each frame
-% if binaryvec == false, otherwise returns a matrix of num_frames x |y|, where the columns
-% are an indicator vector with ones to indicate the midi note number.
+% and stop times (ftimes), returns a matrix of num_frames x |y|, where the columns
+% are an indicator vector with ones to indicate the midi note number. The indicator
+% vectors are truncated by the min and max midi numbers seen in the dataset so that
+% the dbn only has to guess within those bounds. Return ymin and ymax so that the
+% midi note numbers can be retrieved from y if necessary.
 
 num_frames = size(ftimes,1);
 
@@ -15,20 +17,17 @@ m(:,6:7) = m(:,6:7) + 0.025;
 % m(:,6) = note onset (sec)
 % m(:,7) = note offset (sec)
 
-flabels = cell(num_frames,1);
+y = sparse(num_frames, 128);  % midi numbers 0-127
 for i = 1:num_frames
     % gather notes occuring in this frame from MIDI file
     nidx = (m(:,6) < ftimes(i,1) & m(:,7) > ftimes(i,2)) | ...
            (m(:,6) > ftimes(i,1) & m(:,6) < ftimes(i,2)) | ...
            (m(:,7) > ftimes(i,1) & m(:,7) < ftimes(i,2));
-    flabels{i} = unique(m(nidx,4));
+    y(i, unique(m(nidx,4))) = 1;
 end
 
-if binaryvec
-    % convert to indicator matrix
-    % get label bounds
-    ymin = min(cellfun(@min, flabels));
-    ymax = max(cellfun(@max, flabels));
-end
-
+% truncate label vectors based on label bounds
+[r,c] = find(y);
+ymin = min(c); y(:,1:ymin-1) = [];
+ymax = max(c); y(:,ymax+1:end) = [];
 end
