@@ -34,7 +34,8 @@ clear X y a afs ftimes;
 %}
 
 %save delilahdata.mat *trainb *testb;
-load 'delilahdata.mat'
+%{
+load 'delilahdata.mat';
 
 fprintf('Pretraining Layer 1 with RBM: %d-%d \n', numdims, numhid);
 [vishid, hidbiases, visbiases, batchposhidprobs] = rbm(Xtrainb, numhid, maxepoch, 1, true);
@@ -47,4 +48,10 @@ fprintf('\nPretraining Layer 2 with RBM: %d-%d \n', numhid, numpen);
 
 fprintf('\nPretraining Layer 3 with RBM: %d-%d \n', numpen, numpen2);
 [hidpen2, penrecbiases2, hidgenbiases2, batchposhidprobs] = rbm(batchposhidprobs, numpen2, maxepoch, 1, true);
-save mnisthp2classify hidpen2 penrecbiases2 hidgenbiases2;
+%save mnisthp2classify hidpen2 penrecbiases2 hidgenbiases2;
+
+save 'delilahpretrain.mat';
+%}
+
+load 'delilahpretrain.mat';
+backpropclassify(Xtrainb, ytrainb, Xtestb, ytestb, vishid, hidrecbiases, hidpen, penrecbiases, hidpen2, penrecbiases2);
