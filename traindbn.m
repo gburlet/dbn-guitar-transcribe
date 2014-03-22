@@ -54,4 +54,6 @@ save 'delilahpretrain.mat';
 %}
 
 load 'delilahpretrain.mat';
+
+fprintf(1,'\nTraining discriminative model by minimizing cross entropy error. \n');
 backpropclassify(Xtrainb, ytrainb, Xtestb, ytestb, vishid, hidrecbiases, hidpen, penrecbiases, hidpen2, penrecbiases2);

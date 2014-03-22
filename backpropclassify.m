@@ -21,106 +21,31 @@ function [] = backpropclassify(Xtrainb, ytrainb, Xtestb, ytestb, vishid, hidrecb
 % and trainig and test reconstruction errors in mnist_error.mat
 % You can also set maxepoch, default value is 200 as in our paper.  
 
+% initialize experiment variables
 maxepoch=200;
-fprintf(1,'\nTraining discriminative model by minimizing cross entropy error. \n');
+test_recall = zeros(1, maxepoch);
+train_recall = zeros(1, maxepoch);
 
-%%%% PREINITIALIZE WEIGHTS OF THE DISCRIMINATIVE MODEL%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+% preinitialize weights of the discriminative model
 num_labels = size(ytestb{1},2);
 w1=[vishid; hidrecbiases];
 w2=[hidpen; penrecbiases];
 w3=[hidpen2; penrecbiases2];
 w_class = 0.1*randn(size(w3,2)+1,num_labels);
 
-%%%%%%%%%% END OF PREINITIALIZATION OF WEIGHTS  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+% cache layer dimensions
 l1=size(w1,1)-1;
 l2=size(w2,1)-1;
 l3=size(w3,1)-1;
 l4=size(w_class,1)-1;
-l5=num_labels; 
-test_err=[];
-train_err=[];
-
-train_numbatches = length(Xtrainb);
-%train_numsamples = sum(cellfun(@(x) size(x,1), Xtrainb));
-test_numbatches = length(Xtestb);
-%test_numsamples = sum(cellfun(@(x) size(x,1), Xtestb));
+l5=num_labels;
 
 for epoch = 1:maxepoch
-%%%%%%%%%%%%%%%%%%%% COMPUTE TRAINING MISCLASSIFICATION ERROR %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    err=0; 
-    err_cr=0;
-    counter=0;
-    % allocate sparse matrix for training note predictions
-    yhattrainb = cellfun(@(x) sparse(size(x,1), size(x,2)), ytrainb, 'UniformOutput', false);
-    for batch = 1:train_numbatches
-        [N, numdims] = size(Xtrainb{batch});
-        data = [Xtrainb{batch}, ones(N,1)];
-        target = ytrainb{batch};
-        w1probs = 1./(1 + exp(-data*w1)); w1probs = [w1probs, ones(N,1)];
-        w2probs = 1./(1 + exp(-w1probs*w2)); w2probs = [w2probs, ones(N,1)];
-        w3probs = 1./(1 + exp(-w2probs*w3)); w3probs = [w3probs, ones(N,1)];
-        targetout = exp(w3probs*w_class);
-        targetout = targetout./repmat(sum(targetout, 2), 1, num_labels);
-
-        % TODO: polyphony estimation
-        % possibly train neural network here for polyphony estimation:
-        % X = probability output of dbn on class labels [numsamples x numlabels]
-        % y = {1, ..., 6} for polyphony
-        %{
-        [probs, nidx] = sort(targetout, 2, 'descend');
-        probs(1, 1:8)
-        nidx(1, 1:8)
-        %polyphony = sum(target, 2);
-        %polyphony(1:2)
-        [i,j] = find(target(1,:));
-        notes = accumarray(i', j', [], @(x) {x'});
-        celldisp(notes)
-        %}
-
-        % for now, assume polyphony is known
-        polyphony = sum(target, 2);
-        [~, nidx] = sort(targetout, 2, 'descend');
-        yhattrainb{batch}(nidx(:,1:polyphony)) = 1;
-
-        counter = counter + sum(sum(yhattrainb{batch} & ytrainb{batch}));
-        %err_cr = err_cr - sum(sum(target(:,1:end).*log(targetout)));
-    end
-    num_ytrainnotes = sum(cellfun(@(x) sum(nonzeros(x)), ytrainb));
-    train_err(epoch) = num_ytrainnotes - counter;
-    %train_crerr(epoch) = err_cr/train_numbatches;
-%%%%%%%%%%%%%% END OF COMPUTING TRAINING MISCLASSIFICATION ERROR %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%% COMPUTE TEST MISCLASSIFICATION ERROR %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    err=0;
-    err_cr=0;
-    counter=0;
-    yhattestb = cellfun(@(x) sparse(size(x,1), size(x,2)), ytestb, 'UniformOutput', false);
-    for batch = 1:test_numbatches
-        [N, numdims] = size(Xtestb{batch});
-        data = [Xtestb{batch}, ones(N,1)];
-        target = ytestb{batch};
-        w1probs = 1./(1 + exp(-data*w1)); w1probs = [w1probs, ones(N,1)];
-        w2probs = 1./(1 + exp(-w1probs*w2)); w2probs = [w2probs, ones(N,1)];
-        w3probs = 1./(1 + exp(-w2probs*w3)); w3probs = [w3probs, ones(N,1)];
-        targetout = exp(w3probs*w_class);
-        targetout = targetout./repmat(sum(targetout, 2), 1, num_labels);
-
-         % for now, assume polyphony is known
-        polyphony = sum(target, 2);
-        [~, nidx] = sort(targetout, 2, 'descend');
-        yhattestb{batch}(nidx(:,1:polyphony)) = 1;
-
-        counter = counter + sum(sum(yhattestb{batch} & ytestb{batch}));
-        %err_cr = err_cr - sum(sum(target(:,1:end).*log(targetout)));       
-    end
-    num_ytestnotes = sum(cellfun(@(x) sum(nonzeros(x)), ytestb));
-    test_err(epoch) = num_ytestnotes - counter;
-    %test_crerr(epoch) = err_cr/test_numbatches;
-    fprintf(1,'Before epoch %d Train # misclassified: %d (from %d). Test # misclassified: %d (from %d) \t \t \n',...
-            epoch, train_err(epoch), num_ytrainnotes, test_err(epoch), num_ytestnotes);
-%%%%%%%%%%%%%% END OF COMPUTING TEST MISCLASSIFICATION ERROR %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Calculate training and testing recall
+    [train_recall(epoch), train_cerr] = calcerror(Xtrainb, ytrainb, w1, w2, w3, w_class);
+    [test_recall(epoch), test_cerr] = calcerror(Xtestb, ytestb, w1, w2, w3, w_class);
+    fprintf(1,'Before epoch %d; Training recall: %.2f%%. Testing recall: %.2f%% \n',...
+            epoch, train_recall(epoch)*100, test_recall(epoch)*100);
 
     %{
     tt=0;
