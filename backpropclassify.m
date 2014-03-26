@@ -25,6 +25,7 @@ function [] = backpropclassify(Xtrainb, ytrainb, Xtestb, ytestb, vishid, hidrecb
 maxepoch=200;
 test_recall = zeros(1, maxepoch);
 train_recall = zeros(1, maxepoch);
+max_iter=3;
 
 % preinitialize weights of the discriminative model
 num_labels = size(ytestb{1},2);
@@ -40,6 +41,7 @@ l3=size(w3,1)-1;
 l4=size(w_class,1)-1;
 l5=num_labels;
 
+train_numbatches = length(Xtrainb);
 for epoch = 1:maxepoch
     % Calculate training and testing recall
     [train_recall(epoch), train_cerr] = calcerror(Xtrainb, ytrainb, w1, w2, w3, w_class);
@@ -47,40 +49,26 @@ for epoch = 1:maxepoch
     fprintf(1,'Before epoch %d; Training recall: %.2f%%. Testing recall: %.2f%% \n',...
             epoch, train_recall(epoch)*100, test_recall(epoch)*100);
 
-    %{
-    tt=0;
-    for batch = 1:numbatches/10
-        fprintf(1,'epoch %d batch %d\r',epoch,batch);
-
-        %%%%%%%%%%% COMBINE 10 MINIBATCHES INTO 1 LARGER MINIBATCH %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        tt=tt+1; 
-        data=[];
-        targets=[]; 
-        for kk=1:10
-        data=[data 
-            batchdata(:,:,(tt-1)*10+kk)]; 
-        targets=[targets
-            batchtargets(:,:,(tt-1)*10+kk)];
-        end 
+    for batch = 1:train_numbatches
+        %fprintf(1,'epoch %d batch %d\r',epoch, batch);
 
         %%%%%%%%%%%%%%% PERFORM CONJUGATE GRADIENT WITH 3 LINESEARCHES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        max_iter=3;
-
-        if epoch<6  % First update top-level weights holding other weights fixed. 
-            N = size(data,1);
-            XX = [data ones(N,1)];
-            w1probs = 1./(1 + exp(-XX*w1)); w1probs = [w1probs  ones(N,1)];
-            w2probs = 1./(1 + exp(-w1probs*w2)); w2probs = [w2probs ones(N,1)];
-            w3probs = 1./(1 + exp(-w2probs*w3)); %w3probs = [w3probs  ones(N,1)];
+        % conjugate gradient with 3 linesearches
+        if epoch < 6  % First update top-level weights holding other weights fixed. 
+            N = size(Xtrainb{batch},1);
+            XX = [Xtrainb{batch}, ones(N,1)];
+            w1probs = [1./(1 + exp(-XX*w1)), ones(N,1)];
+            w2probs = [1./(1 + exp(-w1probs*w2)), ones(N,1)];
+            w3probs = 1./(1 + exp(-w2probs*w3));
 
             VV = [w_class(:)']';
             Dim = [l4; l5];
-            [X, fX] = minimize(VV,'CG_CLASSIFY_INIT',max_iter,Dim,w3probs,targets);
-            w_class = reshape(X,l4+1,l5);
+            [X, fX] = minimize(VV, 'CG_CLASSIFY_INIT', max_iter, Dim, w3probs, ytrainb{batch});
+            w_class = reshape(X, l4+1, l5);
         else
-            VV = [w1(:)' w2(:)' w3(:)' w_class(:)']';
+            VV = [w1(:)', w2(:)', w3(:)', w_class(:)']';
             Dim = [l1; l2; l3; l4; l5];
-            [X, fX] = minimize(VV,'CG_CLASSIFY',max_iter,Dim,data,targets);
+            [X, fX] = minimize(VV, 'CG_CLASSIFY', max_iter, Dim, Xtrainb{batch}, ytrainb{batch});
 
             w1 = reshape(X(1:(l1+1)*l2),l1+1,l2);
             xxx = (l1+1)*l2;
@@ -90,13 +78,10 @@ for epoch = 1:maxepoch
             xxx = xxx+(l3+1)*l4;
             w_class = reshape(X(xxx+1:xxx+(l4+1)*l5),l4+1,l5);
         end
-        %%%%%%%%%%%%%%% END OF CONJUGATE GRADIENT WITH 3 LINESEARCHES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
     end
 
     save classify_weights w1 w2 w3 w_class
     %save classify_error test_err test_crerr train_err train_crerr;
-    %}
 end
 
 end

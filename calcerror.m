@@ -41,7 +41,9 @@ for batch = 1:numbatches
     % for now, assume polyphony is known
     polyphony = sum(target, 2);
     [~, nidx] = sort(targetout, 2, 'descend');
-    yhatb{batch}(nidx(:,1:polyphony)) = 1;
+    for fidx = 1:N
+        yhatb{batch}(fidx, nidx(fidx, 1:polyphony(fidx))) = 1;
+    end
 
     % calculate number of correct note predictions
     num_correct = num_correct + sum(sum(yhatb{batch} & yb{batch}));

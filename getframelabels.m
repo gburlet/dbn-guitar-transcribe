@@ -1,11 +1,7 @@
-function [y, ymin, ymax] = getframelabels(midi_path, ftimes)
+function [y] = getframelabels(midi_path, ftimes)
 %GETFRAMELABELS given a midi file (midi_path) and a list of frame start
 % and stop times (ftimes), returns a matrix of num_frames x |y|, where the columns
-% are an indicator vector with ones to indicate the midi note number. The indicator
-% vectors are truncated by the min and max midi numbers seen in the dataset so that
-% the dbn only has to guess within those bounds. Return ymin and ymax so that the
-% midi note numbers can be retrieved from y if necessary.
-
+% are an indicator vector with ones to indicate the midi note number.
 num_frames = size(ftimes,1);
 
 m = readmidi(midi_path);
@@ -25,10 +21,5 @@ for i = 1:num_frames
            (m(:,7) > ftimes(i,1) & m(:,7) < ftimes(i,2));
     y(i, unique(m(nidx,4))) = 1;
 end
-
-% truncate label vectors based on label bounds
-[r,c] = find(y);
-ymin = min(c); y(:,1:ymin-1) = [];
-ymax = max(c); y(:,ymax+1:end) = [];
 
 end
