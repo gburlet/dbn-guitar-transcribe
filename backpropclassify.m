@@ -68,7 +68,27 @@ for epoch = 1:maxepoch
         else
             VV = [w1(:)', w2(:)', w3(:)', w_class(:)']';
             Dim = [l1; l2; l3; l4; l5];
+
+            % Conjugate gradient line search
             [X, fX] = minimize(VV, 'CG_CLASSIFY', max_iter, Dim, Xtrainb{batch}, ytrainb{batch});
+
+            %{
+            % L-BFGS-B for error function minimization
+            param = [];
+            param.maxIter = 100;
+            param.maxFnCall = 100000;
+            param.relCha = 1e-5;    % factr
+            param.tolPG = 1e-5;
+            param.m = 100;
+            %lb = -5*ones(size(VV));
+            %ub = abs(lb);
+            lb = -Inf(size(VV));
+            ub = Inf(size(VV));
+            objfun = @(x0) CG_CLASSIFY(x0, Dim, Xtrainb{batch}, ytrainb{batch});
+            [X, objval, iter, feval, flag] = lbfgsb(VV, lb, ub, objfun, [], [], param);
+            %objval, iter, feval, flag
+            fprintf('Batch (%d/%d) objval: %f, iter: %d, flag: %d\n', batch, train_numbatches, objval, iter, flag);
+            %}
 
             w1 = reshape(X(1:(l1+1)*l2),l1+1,l2);
             xxx = (l1+1)*l2;

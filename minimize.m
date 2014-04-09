@@ -153,6 +153,7 @@ while i < abs(length)                                      % while not finished
     s = -df0; d0 = -s'*s;                                        % try steepest
     x3 = 1/(1-d0);                     
     ls_failed = 1;                                    % this line search failed
+    %fprintf('line search failed\n');
   end
 end
 %fprintf('\n');
