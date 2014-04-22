@@ -11,7 +11,7 @@ ytrain = y(shuffle(1:Ntrain),:);
 Xtest = X(shuffle(Ntrain+1:end),:);
 ytest = y(shuffle(Ntrain+1:end),:);
 
-batch_size = 100;
+batch_size = 1000;
 [train_batch_size, last_train_batch] = deal(floor(Ntrain/batch_size), mod(Ntrain, batch_size));
 [test_batch_size, last_test_batch] = deal(floor(Ntest/batch_size), mod(Ntest, batch_size));
 Xtrainb = mat2cell(Xtrain, [batch_size*ones(1,train_batch_size), last_train_batch]);

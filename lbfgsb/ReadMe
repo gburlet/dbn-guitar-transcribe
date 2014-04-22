@@ -1,0 +1,23 @@
+Compile it on linux/Mac by either running "make" in matlab (which runs make.m) 
+or by running "make all" in bash (which uses Makefile).
+(Compiling on Windows machines requires Intel Visual Fortran compiler 
+and Visual Studio compiler.)  
+
+Examples of usage: examplehs038.m
+
+More details on the paramters are at parameters.txt.
+
+There are two ways to invoke the lbfgsb solver:
+1: use function pointer
+[x, f, iter, numCall, flag] = lbfgsb(x0,lb,ub,@computeObjAndGrad,[],@genericcallback, param);
+
+In this case, one must provide a function which 
+returns both the function value and the gradient.
+
+
+2: use string as function name.
+[x, f, iter, numCall, flag] = lbfgsb(x0,lb,ub,'computeObjectiveHS038','computeGradientHS038',...
+           [],'genericcallback', param);
+
+In this case, one must provide two functions.  
+One returns the function value and one returns the gradient.

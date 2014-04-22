@@ -11,10 +11,10 @@ Fs = 11025;
 w = 2048;               % window size (samples)
 win_type = 'hamming';   % window type
 h = 0.75;               % hop size (ratio wrt frame length)
-freq_res = 2;           % frequency resolution of 1 Hz
+%freq_res = 2;           % frequency resolution of 1 Hz
 train_percent = 0.8;
 maxepoch = 80; 
-numhid = 500; numpen = 500; numpen2 = 2000;
+numhid = 250; numpen = 250; numpen2 = 1200;
 
 % load audio file and resample to lower sampling rate
 a = miraudio('Design', 'Sampling', Fs);
@@ -24,6 +24,11 @@ cd(wav_path);
 %spectrograms = mirspectrum(a, 'Window', win_type, 'MinRes', freq_res, 'Frame', w/Fs, h);
 spectrograms = mirspectrum(a, 'Window', win_type, 'Frame', w/Fs, h);
 afs = mireval(spectrograms, 'Folder');
+
+% for experiment 1: input raw audio samples instead of spectrogram to DBN
+%audio_samps = mirframe(a, 'Length', w/Fs, 'Hop', h);
+%afs = mireval(audio_samps, 'Folder');
+
 cd(project_path);
 
 song_names = get(afs{1}, 'Name');

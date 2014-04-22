@@ -20,13 +20,19 @@ num_labels = Dim(end);
 
 N = size(w3probs,1);
 % Do decomversion.
-  w_class = reshape(VV,l1+1,l2);
-  w3probs = [w3probs  ones(N,1)];  
+w_class = reshape(VV,l1+1,l2);
+w3probs = [w3probs  ones(N,1)];  
 
-  targetout = exp(w3probs*w_class);
-  targetout = targetout./repmat(sum(targetout,2),1,num_labels);
-  f = -sum(sum( target(:,1:end).*log(targetout))) ;
-IO = (targetout-target(:,1:end));
+% sigmoid output with matching cross-entropy error function
+targetout = 1./(1+exp(-w3probs*w_class));
+f = -sum(sum(target.*log(targetout) + (1-target).*log(1-targetout)));
+
+%  targetout = exp(w3probs*w_class);
+%  targetout = targetout./repmat(sum(targetout,2),1,num_labels);
+%  f = -sum(sum( target(:,1:end).*log(targetout))) ;
+
+% derivative is simply yhat - y, since we are using the matching loss
+IO = targetout - target;
 Ix_class=IO; 
 dw_class =  w3probs'*Ix_class; 
 
